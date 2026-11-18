@@ -1,4 +1,39 @@
-# B003 実機接続
+# B003 同一Macでの初回統合と実機接続
+
+## 初回統合（機材なし）
+
+同じMacで `Backend → 仮想シリアルのスレーブ → PythonのPTYマスター → B003Lock` を接続する。PTYはPythonが作成する。Node.js 18以上・npm・Python 3.9以上が必要。この構成では `socat`、`pyserial`、`nfcpy`、RC-S330、Atomは不要。
+
+### 自動確認
+
+リポジトリのルートで実行する。Backendの実際の `UsbSerialAdapter` と `SerialBridge` を起動し、隔離したインメモリDBと合成カードを使う。HTTP・LINE・実DBは使用しない。
+
+```sh
+npm ci
+node scripts/check-b003-pty.js
+```
+
+Pythonが別名の環境では `B003_PYTHON=/path/to/python3` を指定する。Mac上で、合成タッチ→Backend生成命令→ACK→解錠成功→貸出中→施錠成功→返却済み、解錠失敗時の承認維持、施錠失敗時の貸出中維持を確認済み。タッチ返信を1回落として同じフレーム・UUIDでの再送と解錠命令1件を確認し、Pythonを再起動して命令を再送し、保存結果の返信と再駆動ゼロも確認した。
+
+### 別ターミナルで手動接続
+
+1. Python側を起動する。初回は新規試験用ディレクトリの台帳パスを使う。同一命令の再起動試験では台帳を再利用する。
+
+   ```sh
+   python3 tools/run_b003_lock.py --pty --card-input stdin --mock-drive success \
+     --db /tmp/b003-first-test-commands.sqlite
+   ```
+
+2. 別ターミナルで、隔離した試験DBを指定してBackendを起動する。`SERIAL_PORT` はPythonが標準出力に表示した値。Pythonを再起動したら表示されたポートでBackendを起動し直す。
+
+   ```sh
+   DATABASE_PATH=/path/to/isolated-test.sqlite SERIAL_MODE=usb \
+     SERIAL_PORT=/dev/ttysNNN SERIAL_BAUD_RATE=115200 SERIAL_RELAY_ID=RELAY01 npm start
+   ```
+
+3. 試験DBにB003を `BIKE03` / `RELAY01` で登録し、合成カード `0123456789ABCDEF` と承認済み試験申請を紐付けておく。Python側の標準入力に `0123456789ABCDEF` を1行入力すると、通常のUSB v1 `card_tap` が送られる。成功時はBackendの返却操作で施錠を試す。失敗試験は新しい試験申請を用意し、`--mock-drive fail-unlock` または `--mock-drive fail-lock` を選ぶ。自動確認はこれらの試験データをケースごとに作成する。
+
+## 後続の実機接続
 
 | 項目 | 構成・状態 |
 | --- | --- |

@@ -1,12 +1,18 @@
 """Connect B003Lock to an RC-S330 and a trusted USB serial link."""
 
 import argparse
+from contextlib import contextmanager, ExitStack
 import importlib
 import json
+import os
+import pty
 import queue
+import re
+import select
 import sys
 import threading
 import time
+import tty
 
 from b003_lock import B003Lock
 
@@ -48,7 +54,7 @@ def run(port, lock, cards, stopped):
             raise OSError("incomplete serial write")
 
     while not stopped.is_set():
-        for byte in port.read(port.in_waiting or 1):
+        for byte in port.read(1024):
             if byte != 10:
                 if not dropping:
                     buffer.append(byte)
@@ -91,40 +97,109 @@ def run(port, lock, cards, stopped):
                 retry_at = time.monotonic() + 2
 
 
+class PtyPort:
+    def __init__(self, master):
+        self.master = master
+
+    def read(self, size):
+        if select.select([self.master], [], [], 0.1)[0]:
+            return os.read(self.master, size)
+        return b""
+
+    def write(self, data):
+        return os.write(self.master, data)
+
+
+@contextmanager
+def virtual_port():
+    master, slave = pty.openpty()
+    try:
+        tty.setraw(slave)
+        print(os.ttyname(slave), flush=True)
+        yield PtyPort(master)
+    finally:
+        os.close(slave)
+        os.close(master)
+
+
+def scan_stdin(cards, stopped):
+    for line in sys.stdin:
+        if stopped.is_set():
+            return
+        idm = line.strip()
+        if not re.fullmatch(r"[0-9a-fA-F]{16}", idm):
+            diagnostic("expected_synthetic_16_hex_idm")
+            continue
+        try:
+            cards.put_nowait(idm)
+        except queue.Full:
+            diagnostic("card_queue_full")
+
+
+class MockDriver:
+    def __init__(self, fail_action):
+        self.fail_action = fail_action
+        self.position = "lock"
+
+    def drive(self, action):
+        diagnostic("mock_drive_" + action)
+        if action != self.fail_action:
+            self.position = action
+
+    def confirms_position(self, action):
+        return action != self.fail_action and self.position == action
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--port", required=True, help="B003-side serial port")
+    transport = parser.add_mutually_exclusive_group(required=True)
+    transport.add_argument("--port", help="B003-side serial port")
+    transport.add_argument("--pty", action="store_true", help="print a virtual port for Backend")
     parser.add_argument("--db", required=True, help="B003-only persistent command ledger")
     parser.add_argument("--device-id", default="BIKE03")
     parser.add_argument("--relay-id", default="RELAY01")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--reader", default="usb:054c:02e1")
-    parser.add_argument("--driver", required=True,
-                        help="local module exposing drive(action) and confirms_position(action)")
+    parser.add_argument("--card-input", choices=("reader", "stdin"), default="reader")
+    actuator = parser.add_mutually_exclusive_group(required=True)
+    actuator.add_argument("--driver", help="local module with drive and confirms_position")
+    actuator.add_argument("--mock-drive", choices=("success", "fail-unlock", "fail-lock"))
     args = parser.parse_args()
-    import nfc
-    import serial
-
-    driver = importlib.import_module(args.driver)
-    lock = B003Lock(args.db, args.device_id, args.relay_id, driver.drive,
-                    driver.confirms_position, diagnostic)
+    if args.card_input == "stdin" and args.driver:
+        parser.error("synthetic card input requires --mock-drive")
+    driver = (importlib.import_module(args.driver) if args.driver
+              else MockDriver(args.mock_drive.removeprefix("fail-")))
     stopped = threading.Event()
     cards = queue.Queue(maxsize=1)
     try:
-        with nfc.ContactlessFrontend(args.reader) as reader, serial.Serial(
-            args.port, args.baud, timeout=0.1, write_timeout=1,
-        ) as port:
-            worker = threading.Thread(target=scan_cards, args=(reader, cards, stopped))
+        with ExitStack() as stack:
+            lock = B003Lock(args.db, args.device_id, args.relay_id, driver.drive,
+                            driver.confirms_position, diagnostic)
+            stack.callback(lock.close)
+            if args.card_input == "reader":
+                import nfc
+
+                reader = stack.enter_context(nfc.ContactlessFrontend(args.reader))
+                worker = threading.Thread(target=scan_cards, args=(reader, cards, stopped))
+            else:
+                worker = threading.Thread(target=scan_stdin, args=(cards, stopped), daemon=True)
+            if args.pty:
+                port = stack.enter_context(virtual_port())
+            else:
+                import serial
+
+                port = stack.enter_context(serial.Serial(
+                    args.port, args.baud, timeout=0.1, write_timeout=1,
+                ))
             worker.start()
             try:
                 run(port, lock, cards, stopped)
             finally:
                 stopped.set()
-                worker.join()
+                if args.card_input == "reader":
+                    worker.join()
     except KeyboardInterrupt:
         return 0
-    finally:
-        lock.close()
     return 1  # Reader stopped unexpectedly.
 
 
