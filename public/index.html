@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b766e" />
+    <title>個人自転車レンタル</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="page-header">
+        <p class="eyebrow">BIKE SHARING</p>
+        <h1>個人自転車レンタル</h1>
+      </header>
+
+      <section class="bike-card" aria-labelledby="bike-name">
+        <div class="bike-icon" aria-hidden="true">🚲</div>
+        <div class="bike-summary">
+          <h2 id="bike-name">Bike 03</h2>
+          <p class="status"><span class="status-dot" aria-hidden="true"></span>利用可能</p>
+        </div>
+
+        <div class="actions">
+          <button id="light-button" class="action-button light-button" type="button">
+            <span aria-hidden="true">💡</span>
+            自転車を光らせる
+          </button>
+          <button id="unlock-button" class="action-button unlock-button" type="button">
+            <span aria-hidden="true">🔓</span>
+            解錠する
+          </button>
+        </div>
+
+        <p id="message" class="message" role="status" aria-live="polite">
+          操作するボタンを選んでください
+        </p>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,176 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
+  color: #173532;
+  background: #eef7f5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top right, rgba(64, 195, 172, 0.2), transparent 34rem), #eef7f5;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(100% - 32px, 480px);
+  margin: 0 auto;
+  padding: 48px 0 32px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #0b766e;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(1.65rem, 7vw, 2.15rem);
+  line-height: 1.25;
+}
+
+.bike-card {
+  padding: 28px 22px 22px;
+  border: 1px solid rgba(23, 53, 50, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 50px rgba(23, 80, 72, 0.12);
+}
+
+.bike-icon {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 16px;
+  place-items: center;
+  border-radius: 20px;
+  background: #ddf4ee;
+  font-size: 2.5rem;
+}
+
+.bike-summary h2 {
+  margin-bottom: 6px;
+  font-size: 1.6rem;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+  color: #23704f;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2fbd78;
+  box-shadow: 0 0 0 4px #def5e9;
+}
+
+.actions {
+  display: grid;
+  gap: 12px;
+}
+
+.action-button {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    box-shadow 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action-button:active {
+  transform: scale(0.98);
+}
+
+.action-button:focus-visible {
+  outline: 3px solid #84d7cb;
+  outline-offset: 3px;
+}
+
+.action-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.light-button {
+  color: #684800;
+  background: #ffd966;
+  box-shadow: 0 8px 18px rgba(173, 124, 0, 0.14);
+}
+
+.unlock-button {
+  color: #ffffff;
+  background: #0b766e;
+  box-shadow: 0 8px 18px rgba(11, 118, 110, 0.22);
+}
+
+.message {
+  min-height: 48px;
+  margin: 18px 2px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #48635f;
+  background: #f2f7f6;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.message.success {
+  color: #14593f;
+  background: #e2f7ec;
+}
+
+.message.error {
+  color: #9a3030;
+  background: #fff0f0;
+}
+
+@media (max-width: 360px) {
+  .app-shell {
+    width: min(100% - 24px, 480px);
+    padding-top: 28px;
+  }
+
+  .bike-card {
+    padding: 22px 16px 18px;
+  }
+}

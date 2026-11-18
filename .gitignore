@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Runtime databases and backups
+/data/
+
+# Logs and macOS files
+*.log
+.DS_Store
+coverage/

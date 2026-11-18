@@ -1,0 +1,38 @@
+{
+  "name": "personal-bike-rental-iot-v0-2",
+  "version": "0.2.0",
+  "private": true,
+  "description": "個人自転車レンタルIoTサービスのv0.2プロトタイプ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "atom": "node virtual-atom.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js",
+    "db:backup": "node scripts/database-maintenance.js backup",
+    "db:restore": "node scripts/database-maintenance.js restore",
+    "ops:status": "node scripts/database-maintenance.js status",
+    "mock:nfc": "node mock-nfc.js",
+    "mock:line": "node mock-line.js",
+    "mock:serial": "node mock-serial.js",
+    "events:send": "node scripts/send-line-event.js",
+    "lock-reader:bind": "node scripts/bind-lock-reader.js",
+    "line:serve": "node scripts/serve-line-gateway.js",
+    "line:link": "node scripts/link-line-test-user.js",
+    "line:link-borrower": "node scripts/link-line-borrower.js",
+    "test": "node --test",
+    "format": "prettier --write \"**/*.js\" \"public/*.{html,css}\" package.json .prettierrc.json",
+    "format:check": "prettier --check \"**/*.js\" \"public/*.{html,css}\" package.json .prettierrc.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "express": "^4.21.2",
+    "serialport": "^12.0.0"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}
